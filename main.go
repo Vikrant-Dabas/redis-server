@@ -10,7 +10,7 @@ func main() {
 	s := NewServer(port)
 	go func(){
 		for msg := range s.msgch{
-			fmt.Printf("message from %s : %s",msg.from,msg.payload)
+			fmt.Printf("message from %s : %s\n",msg.from,msg.payload)
 		}
 	}()
 	err := s.Start()

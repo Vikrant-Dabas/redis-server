@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 )
@@ -54,19 +55,21 @@ func (s *Server) AcceptLoop() {
 }
 
 func (s *Server) ReadLoop(conn net.Conn) {
-	limit := 256
-	buf := make([]byte, limit)
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Printf("error in reading connection: %s\n", err.Error())
-			continue
-		}
-		data := make([]byte,n)
-		copy(data,buf[:n])
+	defer conn.Close()
+
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan(){
+		payload := make([]byte,len(scanner.Bytes()))
+		copy(payload,scanner.Bytes())
+
 		s.msgch <- Message{
-			from:    conn.RemoteAddr().String(),
-			payload: data,
+			from: conn.RemoteAddr().Network(),
+			payload: payload,
 		}
 	}
+
+	if err := scanner.Err();err != nil{
+		fmt.Printf("connection error from %s : %s",conn.RemoteAddr().String(),err)
+	}
+	fmt.Printf("connection closed by %s",conn.RemoteAddr().String())
 }
