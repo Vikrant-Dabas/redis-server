@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+
+	"github.com/Vikrant-Dabas/redis/resp"
 )
 
 type Server struct {
@@ -16,6 +18,11 @@ type Server struct {
 type Message struct {
 	from    string
 	payload []byte
+}
+
+type Input struct{
+	Type byte
+	Payload []byte
 }
 
 func NewServer(listenAddr string) *Server {
@@ -50,26 +57,49 @@ func (s *Server) AcceptLoop() {
 		}
 		fmt.Printf("connection established by %s\n",conn.RemoteAddr().String())
 		conn.Write([]byte("Welcome\n"))
-		go s.ReadLoop(conn)
+		reader := bufio.NewReader(conn)
+		go s.ReadLoop(conn,reader)
 	}
 }
 
-func (s *Server) ReadLoop(conn net.Conn) {
+func (s *Server) ReadLoop(conn net.Conn,r *bufio.Reader) {
 	defer conn.Close()
 
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan(){
-		payload := make([]byte,len(scanner.Bytes()))
-		copy(payload,scanner.Bytes())
-
-		s.msgch <- Message{
-			from: conn.RemoteAddr().Network(),
+	for{
+		payload,err := ReadInput(r)
+		if err != nil{
+			fmt.Println(err)
+			break
+		}
+		s.msgch<-Message{
+			from: conn.RemoteAddr().String(),
 			payload: payload,
 		}
 	}
+	
+	fmt.Printf("connection closed by %s\n",conn.RemoteAddr().String())
+}
 
-	if err := scanner.Err();err != nil{
-		fmt.Printf("connection error from %s : %s",conn.RemoteAddr().String(),err)
+func ReadInput(r *bufio.Reader)([]byte,error){
+	input := Input{}
+	for{
+		b,err := r.ReadByte()
+		if err != nil{
+			return nil,err
+		}
+
+		if b == '\n'{
+			if input.Type == 0{
+				return []byte("empty message"),nil
+			} else {
+				return resp.Parse((*resp.Input)(&input))
+			}	
+		}
+
+		if input.Type == 0{
+			input.Type = b
+		} else {
+			input.Payload = append(input.Payload, b)
+		}
 	}
-	fmt.Printf("connection closed by %s",conn.RemoteAddr().String())
 }
