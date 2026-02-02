@@ -6,15 +6,20 @@ type Input struct {
 }
 
 type Format struct {
-	Type    byte
-	Size    int
-	Payload [][]byte
+	Type         byte
+	Size         int
+	Payload      [][]byte
+	ArrayPayload []Format
 }
 
 const (
-	typeSimple = '+'
-	typeBulk   = '$'
-	typeArray  = '*'
-	typeError  = '-'
-	typeInt    = ':'
+	typeSimple byte = '+'
+	typeBulk   byte = '$'
+	typeArray  byte = '*'
+	typeError  byte = '-'
+	typeInt    byte = ':'
 )
+
+const terminator string = "\r\n"
+
+var AllTypes = []byte{typeArray, typeSimple, typeBulk, typeError, typeInt}

@@ -20,10 +20,6 @@ type Message struct {
 	payload []byte
 }
 
-type Input struct{
-	Type byte
-	Payload []byte
-}
 
 func NewServer(listenAddr string) *Server {
 	return &Server{
@@ -66,7 +62,7 @@ func (s *Server) ReadLoop(conn net.Conn,r *bufio.Reader) {
 	defer conn.Close()
 
 	for{
-		payload,err := ReadInput(r)
+		payload,err := resp.Parse(r)
 		if err != nil{
 			fmt.Println(err)
 			break
@@ -80,26 +76,3 @@ func (s *Server) ReadLoop(conn net.Conn,r *bufio.Reader) {
 	fmt.Printf("connection closed by %s\n",conn.RemoteAddr().String())
 }
 
-func ReadInput(r *bufio.Reader)([]byte,error){
-	input := Input{}
-	for{
-		b,err := r.ReadByte()
-		if err != nil{
-			return nil,err
-		}
-
-		if b == '\n'{
-			if input.Type == 0{
-				return []byte("empty message"),nil
-			} else {
-				return resp.Parse((*resp.Input)(&input))
-			}	
-		}
-
-		if input.Type == 0{
-			input.Type = b
-		} else {
-			input.Payload = append(input.Payload, b)
-		}
-	}
-}
