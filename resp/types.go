@@ -7,8 +7,7 @@ type Input struct {
 
 type Format struct {
 	Type         byte
-	Size         int
-	Payload      [][]byte
+	Payload      []byte
 	ArrayPayload []Format
 }
 

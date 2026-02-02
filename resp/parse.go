@@ -6,22 +6,44 @@ import (
 )
 
 func Parse(r *bufio.Reader)([]byte,error){
-	format,err := ReadCommand(r)
-	if err != nil{
-		return nil,err
+	// format,err := ReadCommand(r)
+	// if err != nil{
+	// 	return nil,err
+	// }
+	// var ans []byte
+	// if format.Type == typeArray{
+	// 	ans = append(ans, format.Type,'-','\n')
+	// 	for _,f := range format.ArrayPayload{
+	// 		ansString := fmt.Sprintf("%c - %s\n",f.Type,f.Payload)
+	// 		ans = append(ans, []byte(ansString)...)
+	// 	}
+	// } else {
+	// 	ans = append(ans, format.Type,' ')
+	// 	ans = append(ans, format.Payload...)
+	// }
+	// return ans,nil
+	fSimple := Format{
+		Type: typeSimple,
+		Payload: []byte("Hello"),
 	}
-	var ans []byte
-	if format.Type == typeArray{
-		ans = append(ans, format.Type,'-','\n')
-		for _,f := range format.ArrayPayload{
-			ansString := fmt.Sprintf("%c - %s\n",f.Type,f.Payload[0])
-			ans = append(ans, []byte(ansString)...)
-		}
-	} else {
-		ans = append(ans, format.Type,'-')
-		ans = append(ans, format.Payload[0]...)
+	fError := Format{
+		Type: typeError,
+		Payload: []byte("Error"),
 	}
-	return ans,nil
+	fInt := Format{
+		Type: typeInt,
+		Payload: []byte("14"),
+	}
+	fBulk := Format{
+		Type: typeBulk,
+		Payload: []byte("Hello World"),
+	}
+	fArr := Format{
+		Type: typeArray,
+		ArrayPayload: []Format{fSimple,fError,fInt,fBulk},
+	}
+	return fArr.ArrayMarshal()
+
 }
 
 func ReadCommand(r *bufio.Reader)(*Format,error){
@@ -34,17 +56,17 @@ func ReadCommand(r *bufio.Reader)(*Format,error){
 	switch msgType{
 	case typeSimple, typeError, typeInt:
 		format.Type = msgType
-		if err := SimpleUnmarshal(&format,payload);err != nil{
+		if err := format.SimpleUnmarshal(payload);err != nil{
 			return nil,err
 		}
 	case typeBulk:
 		format.Type = msgType
-		if err := BulkUnmarshal(r,&format,payload);err != nil{
+		if err := format.BulkUnmarshal(r,payload);err != nil{
 			return nil,err
 		}
 	case typeArray:
 		format.Type = msgType
-		if err := ArrayUnmarshal(r,&format,payload);err != nil{
+		if err := format.ArrayUnmarshal(r,payload);err != nil{
 			return nil,err
 		}
 	default:
@@ -79,6 +101,15 @@ func validTerminator(b []byte)bool{
 		}
 	}
 	return true
+}
+
+func terminatorInBetween(b []byte)bool{
+	for _,ch := range b{
+		if ch == '\r' || ch == '\n'{
+			return true
+		}
+	}
+	return false
 }
 
 func readValidateInput(r *bufio.Reader)([]byte,error){
