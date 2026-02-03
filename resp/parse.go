@@ -6,44 +6,22 @@ import (
 )
 
 func Parse(r *bufio.Reader)([]byte,error){
-	// format,err := ReadCommand(r)
-	// if err != nil{
-	// 	return nil,err
-	// }
-	// var ans []byte
-	// if format.Type == typeArray{
-	// 	ans = append(ans, format.Type,'-','\n')
-	// 	for _,f := range format.ArrayPayload{
-	// 		ansString := fmt.Sprintf("%c - %s\n",f.Type,f.Payload)
-	// 		ans = append(ans, []byte(ansString)...)
-	// 	}
-	// } else {
-	// 	ans = append(ans, format.Type,' ')
-	// 	ans = append(ans, format.Payload...)
-	// }
-	// return ans,nil
-	fSimple := Format{
-		Type: typeSimple,
-		Payload: []byte("Hello"),
+	format,err := ReadCommand(r)
+	if err != nil{
+		return nil,err
 	}
-	fError := Format{
-		Type: typeError,
-		Payload: []byte("Error"),
+	var ans []byte
+	if format.Type == typeArray{
+		ans = append(ans, format.Type,'\n')
+		for _,f := range format.ArrayPayload{
+			ansString := fmt.Sprintf("%c - %s\n",f.Type,f.Payload)
+			ans = append(ans, []byte(ansString)...)
+		}
+	} else {
+		ans = append(ans, format.Type,' ')
+		ans = append(ans, format.Payload...)
 	}
-	fInt := Format{
-		Type: typeInt,
-		Payload: []byte("14"),
-	}
-	fBulk := Format{
-		Type: typeBulk,
-		Payload: []byte("Hello World"),
-	}
-	fArr := Format{
-		Type: typeArray,
-		ArrayPayload: []Format{fSimple,fError,fInt,fBulk},
-	}
-	return fArr.ArrayMarshal()
-
+	return ans,nil
 }
 
 func ReadCommand(r *bufio.Reader)(*Format,error){
@@ -114,7 +92,6 @@ func terminatorInBetween(b []byte)bool{
 
 func readValidateInput(r *bufio.Reader)([]byte,error){
 	payload,err := r.ReadBytes('\n')	
-	fmt.Printf("\033[94m%s-%d\033[0m\n",payload,len(payload))
 	if err != nil{
 		return nil,err
 	}
