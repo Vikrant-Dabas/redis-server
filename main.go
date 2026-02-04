@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	port := ":3000"
+	port := ":6380"
 	s := NewServer(port)
 	go func(){
 		for msg := range s.msgch{

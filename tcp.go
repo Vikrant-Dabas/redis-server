@@ -52,7 +52,6 @@ func (s *Server) AcceptLoop() {
 			continue
 		}
 		fmt.Printf("connection established by %s\n",conn.RemoteAddr().String())
-		conn.Write([]byte("Welcome\n"))
 		reader := bufio.NewReader(conn)
 		go s.ReadLoop(conn,reader)
 	}
@@ -60,19 +59,21 @@ func (s *Server) AcceptLoop() {
 
 func (s *Server) ReadLoop(conn net.Conn,r *bufio.Reader) {
 	defer conn.Close()
-
+	w := bufio.NewWriter(conn)
 	for{
 		payload,err := resp.Parse(r)
 		if err != nil{
-			fmt.Println(err)
-			break
+			w.WriteString("-ERR " + err.Error() + "\r\n")
+		} else {
+			w.Write(payload)
 		}
+		w.Flush()
+
 		s.msgch<-Message{
 			from: conn.RemoteAddr().String(),
 			payload: payload,
 		}
 	}
 	
-	fmt.Printf("connection closed by %s\n",conn.RemoteAddr().String())
 }
 
