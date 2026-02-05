@@ -12,13 +12,13 @@ type Format struct {
 }
 
 const (
-	typeSimple byte = '+'
-	typeBulk   byte = '$'
-	typeArray  byte = '*'
-	typeError  byte = '-'
-	typeInt    byte = ':'
+	TypeSimple byte = '+'
+	TypeBulk   byte = '$'
+	TypeArray  byte = '*'
+	TypeError  byte = '-'
+	TypeInt    byte = ':'
 )
 
 const terminator string = "\r\n"
 
-var AllTypes = []byte{typeArray, typeSimple, typeBulk, typeError, typeInt}
+var AllTypes = []byte{TypeArray, TypeSimple, TypeBulk, TypeError, TypeInt}

@@ -3,42 +3,49 @@ package resp
 import (
 	"bufio"
 	"fmt"
+	"strings"
 )
 
-func Parse(r *bufio.Reader)([]byte,error){
-	format,err := ReadCommand(r)
-	if err != nil{
-		return nil,err
-	}
-
-	return format.Marshal()
-}
-
-func ReadCommand(r *bufio.Reader)(*Format,error){
-	payload,err := readValidateInput(r)
-	if err != nil{
-		return nil,err
+func ReadCommand(r *bufio.Reader) (*Format, error) {
+	payload, err := readValidateInput(r)
+	if err != nil {
+		return nil, err
 	}
 	format := Format{}
 	msgType := payload[0]
-	switch msgType{
-	case typeSimple, typeError, typeInt:
+	switch msgType {
+	case TypeSimple, TypeError, TypeInt:
 		format.Type = msgType
-		if err := format.SimpleUnmarshal(payload);err != nil{
-			return nil,err
+		if err := format.SimpleUnmarshal(payload); err != nil {
+			return nil, err
 		}
-	case typeBulk:
+	case TypeBulk:
 		format.Type = msgType
-		if err := format.BulkUnmarshal(r,payload);err != nil{
-			return nil,err
+		if err := format.BulkUnmarshal(r, payload); err != nil {
+			return nil, err
 		}
-	case typeArray:
+	case TypeArray:
 		format.Type = msgType
-		if err := format.ArrayUnmarshal(r,payload);err != nil{
-			return nil,err
+		if err := format.ArrayUnmarshal(r, payload); err != nil {
+			return nil, err
 		}
 	default:
-		return nil,fmt.Errorf("invalid syntax: message type %c",msgType)
+		return nil, fmt.Errorf("invalid syntax: message type %c", msgType)
 	}
-	return &format,nil
+	return &format, nil
+}
+
+func (f *Format) ToByteMatrix() [][]byte {
+	var output [][]byte
+	switch f.Type {
+	case TypeArray:
+		for _, fmt := range f.ArrayPayload {
+			temp := fmt.ToByteMatrix()
+			output = append(output, temp...)
+		}
+	default:
+		upper := strings.ToUpper(string(f.Payload))
+		output = append(output, []byte(upper))
+	}
+	return output
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/Vikrant-Dabas/redis/commands"
 	"github.com/Vikrant-Dabas/redis/resp"
 )
 
@@ -61,17 +62,34 @@ func (s *Server) ReadLoop(conn net.Conn,r *bufio.Reader) {
 	defer conn.Close()
 	w := bufio.NewWriter(conn)
 	for{
-		payload,err := resp.Parse(r)
+		format,err := resp.ReadCommand(r)
 		if err != nil{
 			w.WriteString("-ERR " + err.Error() + "\r\n")
-		} else {
-			w.Write(payload)
+			w.Flush()
+			continue
+		}
+		cmd := format.ToByteMatrix()
+		format,err = commands.Execute(cmd)
+		if err != nil{
+			w.WriteString("-ERR " + err.Error() + "\r\n")
+			w.Flush()
+			continue
+		}
+		output,err := format.Marshal()
+		if err != nil{
+			w.WriteString("-ERR " + err.Error() + "\r\n")
+			w.Flush()
+			continue
+		}
+		_, err = w.Write(output)
+		if err != nil {
+    		return
 		}
 		w.Flush()
 
 		s.msgch<-Message{
 			from: conn.RemoteAddr().String(),
-			payload: payload,
+			payload: output, 
 		}
 	}
 	
