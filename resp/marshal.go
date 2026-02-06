@@ -6,6 +6,9 @@ import (
 )
 
 func (f *Format) Marshal() ([]byte, error) {
+	if f == nil{
+		return NilResp,nil
+	}
 	switch f.Type {
 	case TypeSimple, TypeError, TypeInt:
 		return f.SimpleMarshal()

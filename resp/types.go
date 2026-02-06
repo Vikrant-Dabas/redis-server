@@ -22,3 +22,5 @@ const (
 const terminator string = "\r\n"
 
 var AllTypes = []byte{TypeArray, TypeSimple, TypeBulk, TypeError, TypeInt}
+
+var NilResp = []byte("$-1\r\n")

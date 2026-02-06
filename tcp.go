@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/Vikrant-Dabas/redis/commands"
+	"github.com/Vikrant-Dabas/redis/db"
 	"github.com/Vikrant-Dabas/redis/resp"
 )
 
@@ -14,6 +15,7 @@ type Server struct {
 	ln         net.Listener
 	quitch     chan struct{}
 	msgch      chan Message
+	database   db.DB
 }
 
 type Message struct {
@@ -21,12 +23,13 @@ type Message struct {
 	payload []byte
 }
 
-
 func NewServer(listenAddr string) *Server {
+	database := db.NewDB()
 	return &Server{
 		listenAddr: listenAddr,
 		quitch:     make(chan struct{}),
 		msgch:      make(chan Message, 10),
+		database:   database,
 	}
 }
 
@@ -52,46 +55,45 @@ func (s *Server) AcceptLoop() {
 			fmt.Printf("error in accepting connection: %s\n", err.Error())
 			continue
 		}
-		fmt.Printf("connection established by %s\n",conn.RemoteAddr().String())
+		fmt.Printf("connection established by %s\n", conn.RemoteAddr().String())
 		reader := bufio.NewReader(conn)
-		go s.ReadLoop(conn,reader)
+		go s.ReadLoop(conn, reader)
 	}
 }
 
-func (s *Server) ReadLoop(conn net.Conn,r *bufio.Reader) {
+func (s *Server) ReadLoop(conn net.Conn, r *bufio.Reader) {
 	defer conn.Close()
 	w := bufio.NewWriter(conn)
-	for{
-		format,err := resp.ReadCommand(r)
-		if err != nil{
+	for {
+		format, err := resp.ReadCommand(r)
+		if err != nil {
 			w.WriteString("-ERR " + err.Error() + "\r\n")
 			w.Flush()
 			continue
 		}
 		cmd := format.ToByteMatrix()
-		format,err = commands.Execute(cmd)
-		if err != nil{
+		format, err = commands.Execute(s.database,cmd)
+		if err != nil {
 			w.WriteString("-ERR " + err.Error() + "\r\n")
 			w.Flush()
 			continue
 		}
-		output,err := format.Marshal()
-		if err != nil{
+		output, err := format.Marshal()
+		if err != nil {
 			w.WriteString("-ERR " + err.Error() + "\r\n")
 			w.Flush()
 			continue
 		}
 		_, err = w.Write(output)
 		if err != nil {
-    		return
+			return
 		}
 		w.Flush()
 
-		s.msgch<-Message{
-			from: conn.RemoteAddr().String(),
-			payload: output, 
+		s.msgch <- Message{
+			from:    conn.RemoteAddr().String(),
+			payload: output,
 		}
 	}
-	
-}
 
+}

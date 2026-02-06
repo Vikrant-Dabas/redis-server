@@ -3,7 +3,6 @@ package resp
 import (
 	"bufio"
 	"fmt"
-	"strings"
 )
 
 func ReadCommand(r *bufio.Reader) (*Format, error) {
@@ -44,8 +43,7 @@ func (f *Format) ToByteMatrix() [][]byte {
 			output = append(output, temp...)
 		}
 	default:
-		upper := strings.ToUpper(string(f.Payload))
-		output = append(output, []byte(upper))
+		output = append(output, f.Payload)
 	}
 	return output
 }

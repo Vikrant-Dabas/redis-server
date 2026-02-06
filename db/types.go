@@ -3,7 +3,7 @@ package db
 type Value struct {
 	ValType DBValueType
 	Val     []byte
-	Hash    *DB
+	Hash    DB
 	// ExpiresAt uint64    deal with this later
 }
 
@@ -15,19 +15,3 @@ const (
 	TypeString DBValueType = iota
 	TypeHash
 )
-
-func NewString(b []byte) *Value {
-	return &Value{
-		ValType: TypeString,
-		Val:     b,
-	}
-}
-
-func NewHash() *Value {
-	hash := make(DB)
-	return &Value{
-		ValType: TypeHash,
-		Hash:    &hash,
-	}
-}
-

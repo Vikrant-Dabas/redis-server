@@ -2,33 +2,24 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/Vikrant-Dabas/redis/db"
 	"github.com/Vikrant-Dabas/redis/resp"
 )
 
-func Execute(input [][]byte) (*resp.Format, error) {
-	noOfCommands := len(input)
-	switch noOfCommands{
-	case 1:
-		cmd := input[0]
-		return ExecuteSingle(cmd)
-	default:
-		return nil,fmt.Errorf("invalid command")
+func Execute(db db.DB,input [][]byte) (*resp.Format, error) {
+	cmd := strings.ToUpper(string(input[0]))
+	cmdType,ok := CmdTypes[cmd]
+	if !ok{
+		return nil,fmt.Errorf("invalid command %s",cmd)
 	}
-}
-
-func PingPong() *resp.Format {
-	return &resp.Format{
-		Type: resp.TypeSimple,
-		Payload: []byte("PONG"),
-	}
-}
-
-func ExecuteSingle(input []byte)(*resp.Format,error){
-	switch string(input){
-	case "PING":
-		return PingPong(),nil
+	switch cmdType{
+	case CmdString:
+		return ExecuteString(db,cmd,input[1:])
+	case CmdUniversal:
+		return ExecuteUniversal(cmd,input[1:])
 	default:
-		return nil,fmt.Errorf("invalid command: %s",input)
+		return nil,fmt.Errorf("command not supported: %s",cmd)
 	}
 }

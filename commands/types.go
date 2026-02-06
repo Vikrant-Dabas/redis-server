@@ -2,14 +2,17 @@ package commands
 
 type CmdType uint8
 
-const(
-	CmdUversal CmdType = iota
+const (
+	CmdUniversal CmdType = iota
 	CmdString
 	CmdList
 )
 
 var CmdTypes = map[string]CmdType{
 	// String
-	"GET":CmdString,
-	"SET":CmdString,
+	"GET": CmdString,
+	"SET": CmdString,
+
+	// Universal
+	"PING": CmdUniversal,
 }
