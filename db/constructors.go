@@ -15,7 +15,7 @@ func NewHash() *Value {
 	}
 }
 
-func NewDB() DB{
+func NewDB() DB {
 	database := make(DB)
 	return database
 }

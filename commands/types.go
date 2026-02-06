@@ -10,8 +10,14 @@ const (
 
 var CmdTypes = map[string]CmdType{
 	// String
-	"GET": CmdString,
-	"SET": CmdString,
+	"GET":    CmdString,
+	"SET":    CmdString,
+	"INCR":   CmdString,
+	"INCRBY": CmdString,
+	"DECR":   CmdString,
+	"DECRBY": CmdString,
+	"MSET":   CmdString,
+	"MGET":   CmdString,
 
 	// Universal
 	"PING": CmdUniversal,

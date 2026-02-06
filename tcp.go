@@ -72,7 +72,7 @@ func (s *Server) ReadLoop(conn net.Conn, r *bufio.Reader) {
 			continue
 		}
 		cmd := format.ToByteMatrix()
-		format, err = commands.Execute(s.database,cmd)
+		format, err = commands.Execute(s.database, cmd)
 		if err != nil {
 			w.WriteString("-ERR " + err.Error() + "\r\n")
 			w.Flush()

@@ -17,6 +17,7 @@ const (
 	TypeArray  byte = '*'
 	TypeError  byte = '-'
 	TypeInt    byte = ':'
+	TypeNil    byte = 0
 )
 
 const terminator string = "\r\n"

@@ -8,18 +8,18 @@ import (
 	"github.com/Vikrant-Dabas/redis/resp"
 )
 
-func Execute(db db.DB,input [][]byte) (*resp.Format, error) {
+func Execute(db db.DB, input [][]byte) (*resp.Format, error) {
 	cmd := strings.ToUpper(string(input[0]))
-	cmdType,ok := CmdTypes[cmd]
-	if !ok{
-		return nil,fmt.Errorf("invalid command %s",cmd)
+	cmdType, ok := CmdTypes[cmd]
+	if !ok {
+		return nil, fmt.Errorf("invalid command %s", cmd)
 	}
-	switch cmdType{
+	switch cmdType {
 	case CmdString:
-		return ExecuteString(db,cmd,input[1:])
+		return ExecuteString(db, cmd, input[1:])
 	case CmdUniversal:
-		return ExecuteUniversal(cmd,input[1:])
+		return ExecuteUniversal(cmd, input[1:])
 	default:
-		return nil,fmt.Errorf("command not supported: %s",cmd)
+		return nil, fmt.Errorf("command not supported: %s", cmd)
 	}
 }
