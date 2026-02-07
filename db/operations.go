@@ -5,16 +5,16 @@ import (
 	"strconv"
 )
 
-func (db DB) Set(key, value []byte) {
-	db[string(key)] = NewString(value)
+func (db DB) Set(key []byte, value *Value) {
+	db[string(key)] = value
 }
 
-func (db DB) Get(key []byte) ([]byte, bool) {
+func (db DB) Get(key []byte) (*Value, bool) {
 	val, ok := db[string(key)]
 	if !ok {
 		return nil, ok
 	}
-	return val.Val, ok
+	return val, ok
 }
 
 func (db DB) ChangeIntValue(key []byte, amount int) (int, error) {
@@ -22,7 +22,7 @@ func (db DB) ChangeIntValue(key []byte, amount int) (int, error) {
 	var val int
 	var err error
 	if ok {
-		val, err = strconv.Atoi(string(valString))
+		val, err = strconv.Atoi(string(valString.Val))
 		if err != nil {
 			return 0, fmt.Errorf("value is not an integer or out of range")
 		}
@@ -31,6 +31,6 @@ func (db DB) ChangeIntValue(key []byte, amount int) (int, error) {
 	}
 
 	val += amount
-	db.Set(key, []byte(strconv.Itoa(val)))
+	db.Set(key, NewString([]byte(strconv.Itoa(val))))
 	return val, nil
 }

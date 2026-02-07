@@ -75,43 +75,47 @@ func incdecby(db db.DB, input [][]byte, increase bool) (*resp.Format, error) {
 	}, nil
 }
 
-func get(db db.DB, input [][]byte) (*resp.Format, error) {
+func get(database db.DB, input [][]byte) (*resp.Format, error) {
 	if len(input) != 1 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	key := input[0]
-	output, ok := db.Get(key)
+	output, ok := database.Get(key)
 	if !ok {
 		return &resp.Format{
 			Type: resp.TypeNil,
 		}, nil
 	}
+	if output.ValType != db.TypeString {
+		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+	}
 	return &resp.Format{
 		Type:    resp.TypeBulk,
-		Payload: output,
+		Payload: output.Val,
 	}, nil
 }
 
-func set(db db.DB, input [][]byte) (*resp.Format, error) {
+func set(database db.DB, input [][]byte) (*resp.Format, error) {
 	if len(input) != 2 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	key, value := input[0], input[1]
-	db.Set(key, value)
+	database.Set(key, db.NewString(value))
 	return &resp.Format{
 		Type:    resp.TypeSimple,
 		Payload: []byte("OK"),
 	}, nil
 }
 
-func mset(db db.DB, input [][]byte) (*resp.Format, error) {
+func mset(database db.DB, input [][]byte) (*resp.Format, error) {
 	n := len(input)
 	if n == 0 || n%2 == 1 {
 		return nil, fmt.Errorf("wrong number of commands for mset command")
 	}
 	for i := 0; i < n; i += 2 {
-		key, val := input[i], input[i+1]
-		db.Set(key, val)
+		key, value := input[i], input[i+1]
+		val := db.NewString(value)
+		database.Set(key, val)
 	}
 
 	return &resp.Format{
@@ -120,16 +124,19 @@ func mset(db db.DB, input [][]byte) (*resp.Format, error) {
 	}, nil
 }
 
-func mget(db db.DB, input [][]byte) (*resp.Format, error) {
+func mget(database db.DB, input [][]byte) (*resp.Format, error) {
 	output := &resp.Format{
 		Type: resp.TypeArray,
 	}
 	for _, i := range input {
-		val, ok := db.Get(i)
+		val, ok := database.Get(i)
+		if ok && val.ValType != db.TypeString {
+			return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+		}
 		if ok {
 			output.ArrayPayload = append(output.ArrayPayload, resp.Format{
 				Type:    resp.TypeBulk,
-				Payload: val,
+				Payload: val.Val,
 			})
 		} else {
 			output.ArrayPayload = append(output.ArrayPayload, resp.Format{

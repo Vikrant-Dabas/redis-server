@@ -21,4 +21,13 @@ var CmdTypes = map[string]CmdType{
 
 	// Universal
 	"PING": CmdUniversal,
+
+	// List
+	"LPUSH":  CmdList,
+	"RPUSH":  CmdList,
+	"LPOP":   CmdList,
+	"RPOP":   CmdList,
+	"LLEN":   CmdList,
+	"LRANGE": CmdList,
+	"LTRIM":  CmdList,
 }
