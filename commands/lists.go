@@ -8,6 +8,11 @@ import (
 	"github.com/Vikrant-Dabas/redis/resp"
 )
 
+/*
+	To Do:
+		delete list after all elements popped -- to do this add db.Delete command for all types
+*/
+
 func ExecuteList(db db.DB, cmd string, input [][]byte) (*resp.Format, error) {
 	switch cmd {
 	case "LPUSH":
@@ -22,8 +27,57 @@ func ExecuteList(db db.DB, cmd string, input [][]byte) (*resp.Format, error) {
 		return listPop(db, input, false)
 	case "LRANGE":
 		return lrange(db, input)
+	case "LTRIM":
+		return ltrim(db, input)
 	}
 	return nil, fmt.Errorf("invalid command: %s", cmd)
+}
+
+func ltrim(database db.DB, input [][]byte) (*resp.Format, error) {
+	if len(input) != 3 {
+		return nil, fmt.Errorf("invalid no of commands %d", len(input))
+	}
+
+	key := input[0]
+	start, err1 := strconv.Atoi(string(input[1]))
+	end, err2 := strconv.Atoi(string(input[2]))
+	if err1 != nil || err2 != nil {
+		return nil, fmt.Errorf("value is not an integer or out of range")
+	}
+	value, ok := database.Get(key)
+
+	if ok && value.ValType != db.TypeList {
+		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
+	}
+	if !ok || value.List.Size == 0 {
+		return &resp.Format{Type: resp.TypeSimple, Payload: []byte("OK")}, nil
+	}
+	if end < 0 {
+		end += value.List.Size
+	}
+	if start < 0 {
+		start += value.List.Size
+	}
+	start = max(start, 0)
+	end = min(end, value.List.Size-1)
+	if start > end {
+		// delete list here
+		return &resp.Format{Type: resp.TypeSimple, Payload: []byte("OK")}, nil
+	}
+	node := value.List.Head
+	for i := 0; node != nil && i < value.List.Size; i++ {
+		if i == start {
+			value.List.Head = node
+			node.Left = nil
+		}
+		if i == end {
+			value.List.Tail = node
+			node.Right = nil
+		}
+		node = node.Right
+	}
+	value.List.Size = end - start + 1
+	return &resp.Format{Type: resp.TypeSimple, Payload: []byte("OK")}, nil
 }
 
 func lrange(database db.DB, input [][]byte) (*resp.Format, error) {
@@ -54,11 +108,10 @@ func lrange(database db.DB, input [][]byte) (*resp.Format, error) {
 	if start < 0 {
 		start += value.List.Size
 	}
-	if end >= value.List.Size || start < 0 {
-		return nil, fmt.Errorf("value is not an integer or out of range")
-	}
+	start = max(start, 0)
+	end = min(end, value.List.Size-1)
 	node := value.List.Head
-	for i := 0; i < value.List.Size; i++ {
+	for i := 0; node != nil && i < value.List.Size; i++ {
 		if i >= start && i <= end {
 			newBulk := &resp.Format{
 				Type:    resp.TypeBulk,
