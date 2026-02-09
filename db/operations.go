@@ -17,6 +17,10 @@ func (db DB) Get(key []byte) (*Value, bool) {
 	return val, ok
 }
 
+func (db DB) Delete(key []byte){
+	delete(db,string(key))
+}
+
 func (db DB) ChangeIntValue(key []byte, amount int) (int, error) {
 	valString, ok := db.Get(key)
 	var val int
