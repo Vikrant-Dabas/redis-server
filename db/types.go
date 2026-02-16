@@ -16,6 +16,7 @@ const (
 	TypeString DBValueType = iota
 	TypeHash
 	TypeList
+	TypeSet
 )
 
 type List struct {

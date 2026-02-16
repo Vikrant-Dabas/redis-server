@@ -6,6 +6,7 @@ const (
 	CmdUniversal CmdType = iota
 	CmdString
 	CmdList
+	CmdSet
 )
 
 var CmdTypes = map[string]CmdType{
@@ -30,4 +31,17 @@ var CmdTypes = map[string]CmdType{
 	"LLEN":   CmdList,
 	"LRANGE": CmdList,
 	"LTRIM":  CmdList,
+
+	// Set
+	"SADD":CmdSet,
+	"SREM":CmdSet,
+	"SPOP":CmdSet,
+	"SRANDMEMBER":CmdSet,
+	"SISMEMBER":CmdSet,
+	"SMISMEMBER":CmdSet,
+	"SINTER":CmdSet,
+	"SUNION":CmdSet,
+	"SDIFF":CmdSet,
+	"SCARD":CmdSet,
+	"SMEMBERS":CmdSet,
 }

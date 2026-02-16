@@ -21,6 +21,8 @@ func Execute(db db.DB, input [][]byte) (*resp.Format, error) {
 		return ExecuteUniversal(cmd, input[1:])
 	case CmdList:
 		return ExecuteList(db, cmd, input[1:])
+	case CmdSet:
+		return ExecuteSet(db, cmd, input[1:])
 	default:
 		return nil, fmt.Errorf("command not supported: %s", cmd)
 	}
