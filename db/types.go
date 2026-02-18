@@ -5,12 +5,14 @@ type Value struct {
 	Val     []byte
 	List    *List
 	Hash    DB
+	Set     Set
 	// ExpiresAt uint64    deal with this later
 }
 
 type DBValueType uint8
 
 type DB map[string]*Value
+type Set map[string]struct{}
 
 const (
 	TypeString DBValueType = iota

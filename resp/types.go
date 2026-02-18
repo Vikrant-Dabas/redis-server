@@ -25,3 +25,13 @@ const terminator string = "\r\n"
 var AllTypes = []byte{TypeArray, TypeSimple, TypeBulk, TypeError, TypeInt}
 
 var NilResp = []byte("$-1\r\n")
+
+var TrueFormat = &Format{
+	Type:    TypeInt,
+	Payload: []byte("1"),
+}
+
+var FalseFormat = &Format{
+	Type:    TypeInt,
+	Payload: []byte("0"),
+}

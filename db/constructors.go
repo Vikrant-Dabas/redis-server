@@ -33,3 +33,11 @@ func NewNode(value []byte) *Node {
 		Val: value,
 	}
 }
+
+func NewSet() *Value {
+	set := make(map[string]struct{})
+	return &Value{
+		ValType: TypeSet,
+		Set:     set,
+	}
+}
