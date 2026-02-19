@@ -4,7 +4,6 @@ type Value struct {
 	ValType DBValueType
 	Val     []byte
 	List    *List
-	Hash    DB
 	Set     Set
 	// ExpiresAt uint64    deal with this later
 }
@@ -16,7 +15,6 @@ type Set map[string]struct{}
 
 const (
 	TypeString DBValueType = iota
-	TypeHash
 	TypeList
 	TypeSet
 )
