@@ -21,7 +21,10 @@ var CmdTypes = map[string]CmdType{
 	"MGET":   CmdString,
 
 	// Universal
-	"PING": CmdUniversal,
+	"PING":   CmdUniversal,
+	"EXPIRE": CmdUniversal,
+	"TTL":CmdUniversal,
+	"PERSIST":CmdUniversal,
 
 	// List
 	"LPUSH":  CmdList,

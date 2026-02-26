@@ -8,34 +8,34 @@ import (
 	"github.com/Vikrant-Dabas/redis/resp"
 )
 
-func ExecuteSet(db db.DB, cmd string, input [][]byte) (*resp.Format, error) {
+func ExecuteSet(store *db.Store, cmd string, input [][]byte) (*resp.Format, error) {
 	switch cmd {
 	case "SADD":
-		return sadd(db, input)
+		return sadd(store, input)
 	case "SREM":
-		return srem(db, input)
+		return srem(store, input)
 	case "SPOP":
-		return spopRandMem(db, input, false)
+		return spopRandMem(store, input, false)
 	case "SRANDMEMBER":
-		return spopRandMem(db, input, true)
+		return spopRandMem(store, input, true)
 	case "SISMEMBER":
-		return sismember(db, input)
+		return sismember(store, input)
 	case "SMISMEMBER":
-		return smismember(db, input)
+		return smismember(store, input)
 	case "SMEMBERS":
-		return smembers(db, input)
+		return smembers(store, input)
 	}
 	return nil, fmt.Errorf("invalid command: %s", cmd)
 }
 
-func smembers(database db.DB, input [][]byte) (*resp.Format, error) {
+func smembers(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) != 1 {
 		return nil, fmt.Errorf("ERR wrong number of arguments for 'smembers' command")
 	}
 
 	key := input[0]
 
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if !ok {
 		return &resp.Format{
 			Type: resp.TypeArray,
@@ -60,13 +60,13 @@ func smembers(database db.DB, input [][]byte) (*resp.Format, error) {
 	return output, nil
 }
 
-func sismember(database db.DB, input [][]byte) (*resp.Format, error) {
+func sismember(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) != 2 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 
 	key, val := input[0], input[1]
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if !ok {
 		return resp.FalseFormat, nil
 	}
@@ -80,14 +80,14 @@ func sismember(database db.DB, input [][]byte) (*resp.Format, error) {
 	}
 }
 
-func smismember(database db.DB, input [][]byte) (*resp.Format, error) {
+func smismember(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) < 2 {
 		return nil, fmt.Errorf("ERR wrong number of arguments for 'smismember' command")
 	}
 
 	key, members := input[0], input[1:]
 
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if ok && value.ValType != db.TypeSet {
 		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
@@ -111,13 +111,13 @@ func smismember(database db.DB, input [][]byte) (*resp.Format, error) {
 	return output, nil
 }
 
-func sadd(database db.DB, input [][]byte) (*resp.Format, error) {
+func sadd(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) < 2 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	key, values := input[0], input[1:]
 	set := &db.Value{}
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if !ok {
 		set = db.NewSet()
 	} else {
@@ -134,19 +134,19 @@ func sadd(database db.DB, input [][]byte) (*resp.Format, error) {
 			count++
 		}
 	}
-	database.Set(key, set)
+	store.SetDB(key, set)
 	return &resp.Format{
 		Type:    resp.TypeInt,
 		Payload: []byte(strconv.Itoa(count)),
 	}, nil
 }
 
-func srem(database db.DB, input [][]byte) (*resp.Format, error) {
+func srem(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) < 2 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	key, values := input[0], input[1:]
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if !ok {
 		return &resp.Format{
 			Type:    resp.TypeInt,
@@ -159,7 +159,7 @@ func srem(database db.DB, input [][]byte) (*resp.Format, error) {
 	}
 	count := 0
 	for _, item := range values {
-		ok, err := database.DeleteSetMember(key, item)
+		ok, err := store.DeleteSetMember(key, item)
 		if err != nil {
 			return nil, err
 		}
@@ -173,12 +173,12 @@ func srem(database db.DB, input [][]byte) (*resp.Format, error) {
 	}, nil
 }
 
-func spopRandMem(database db.DB, input [][]byte, randMember bool) (*resp.Format, error) {
+func spopRandMem(store *db.Store, input [][]byte, randMember bool) (*resp.Format, error) {
 	if len(input) > 2 || len(input) < 1 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	key, num := input[0], input[1:]
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if !ok {
 		return &resp.Format{Type: resp.TypeNil}, nil
 	} else {
@@ -211,7 +211,7 @@ func spopRandMem(database db.DB, input [][]byte, randMember bool) (*resp.Format,
 		if output.Type == resp.TypeBulk {
 			output.Payload = []byte(member)
 			if !randMember {
-				database.DeleteSetMember(key, []byte(member))
+				store.DeleteSetMember(key, []byte(member))
 			}
 			return output, nil
 		}
@@ -223,7 +223,7 @@ func spopRandMem(database db.DB, input [][]byte, randMember bool) (*resp.Format,
 
 		pops--
 		if !randMember {
-			database.DeleteSetMember(key, []byte(member))
+			store.DeleteSetMember(key, []byte(member))
 		}
 	}
 

@@ -8,29 +8,29 @@ import (
 	"github.com/Vikrant-Dabas/redis/resp"
 )
 
-func ExecuteString(db db.DB, cmd string, input [][]byte) (*resp.Format, error) {
+func ExecuteString(store *db.Store, cmd string, input [][]byte) (*resp.Format, error) {
 	switch cmd {
 	case "GET":
-		return get(db, input)
+		return get(store, input)
 	case "SET":
-		return set(db, input)
+		return set(store, input)
 	case "INCR":
-		return incdec(db, input, true)
+		return incdec(store, input, true)
 	case "DECR":
-		return incdec(db, input, false)
+		return incdec(store, input, false)
 	case "INCRBY":
-		return incdecby(db, input, true)
+		return incdecby(store, input, true)
 	case "DECRBY":
-		return incdecby(db, input, false)
+		return incdecby(store, input, false)
 	case "MGET":
-		return mget(db, input)
+		return mget(store, input)
 	case "MSET":
-		return mset(db, input)
+		return mset(store, input)
 	}
 	return nil, fmt.Errorf("invalid command: %s", cmd)
 }
 
-func incdec(db db.DB, input [][]byte, increase bool) (*resp.Format, error) {
+func incdec(store *db.Store, input [][]byte, increase bool) (*resp.Format, error) {
 	if len(input) != 1 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
@@ -41,7 +41,7 @@ func incdec(db db.DB, input [][]byte, increase bool) (*resp.Format, error) {
 	} else {
 		change = -1
 	}
-	val, err := db.ChangeIntValue(key, change)
+	val, err := store.ChangeIntValue(key, change)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func incdec(db db.DB, input [][]byte, increase bool) (*resp.Format, error) {
 	}, nil
 }
 
-func incdecby(db db.DB, input [][]byte, increase bool) (*resp.Format, error) {
+func incdecby(store *db.Store, input [][]byte, increase bool) (*resp.Format, error) {
 	if len(input) != 2 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
@@ -65,7 +65,7 @@ func incdecby(db db.DB, input [][]byte, increase bool) (*resp.Format, error) {
 	} else {
 		change *= -1
 	}
-	val, err := db.ChangeIntValue(key, change)
+	val, err := store.ChangeIntValue(key, change)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +75,12 @@ func incdecby(db db.DB, input [][]byte, increase bool) (*resp.Format, error) {
 	}, nil
 }
 
-func get(database db.DB, input [][]byte) (*resp.Format, error) {
+func get(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) != 1 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	key := input[0]
-	output, ok := database.Get(key)
+	output, ok := store.GetDB(key)
 	if !ok {
 		return &resp.Format{
 			Type: resp.TypeNil,
@@ -95,19 +95,19 @@ func get(database db.DB, input [][]byte) (*resp.Format, error) {
 	}, nil
 }
 
-func set(database db.DB, input [][]byte) (*resp.Format, error) {
+func set(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) != 2 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	key, value := input[0], input[1]
-	database.Set(key, db.NewString(value))
+	store.SetDB(key, db.NewString(value))
 	return &resp.Format{
 		Type:    resp.TypeSimple,
 		Payload: []byte("OK"),
 	}, nil
 }
 
-func mset(database db.DB, input [][]byte) (*resp.Format, error) {
+func mset(store *db.Store, input [][]byte) (*resp.Format, error) {
 	n := len(input)
 	if n == 0 || n%2 == 1 {
 		return nil, fmt.Errorf("wrong number of commands for mset command")
@@ -115,7 +115,7 @@ func mset(database db.DB, input [][]byte) (*resp.Format, error) {
 	for i := 0; i < n; i += 2 {
 		key, value := input[i], input[i+1]
 		val := db.NewString(value)
-		database.Set(key, val)
+		store.SetDB(key, val)
 	}
 
 	return &resp.Format{
@@ -124,12 +124,12 @@ func mset(database db.DB, input [][]byte) (*resp.Format, error) {
 	}, nil
 }
 
-func mget(database db.DB, input [][]byte) (*resp.Format, error) {
+func mget(store *db.Store, input [][]byte) (*resp.Format, error) {
 	output := &resp.Format{
 		Type: resp.TypeArray,
 	}
 	for _, i := range input {
-		val, ok := database.Get(i)
+		val, ok := store.GetDB(i)
 		if ok && val.ValType != db.TypeString {
 			return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
 		}

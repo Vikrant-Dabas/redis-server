@@ -7,9 +7,22 @@ func NewString(b []byte) *Value {
 	}
 }
 
+func NewExpDB() ExpDB{
+	database := make(ExpDB)
+	return database
+}
+
 func NewDB() DB {
 	database := make(DB)
 	return database
+}
+
+func NewStore() *Store{
+	db,expDb := make(DB),make(ExpDB)
+	return &Store{
+		DB: db,
+		ExpDB: expDb,
+	}
 }
 
 func NewList() *Value {

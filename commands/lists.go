@@ -13,27 +13,27 @@ import (
 		delete list after all elements popped -- to do this add db.Delete command for all types
 */
 
-func ExecuteList(db db.DB, cmd string, input [][]byte) (*resp.Format, error) {
+func ExecuteList(store *db.Store, cmd string, input [][]byte) (*resp.Format, error) {
 	switch cmd {
 	case "LPUSH":
-		return listPush(db, input, true)
+		return listPush(store, input, true)
 	case "RPUSH":
-		return listPush(db, input, false)
+		return listPush(store, input, false)
 	case "LLEN":
-		return llen(db, input)
+		return llen(store, input)
 	case "LPOP":
-		return listPop(db, input, true)
+		return listPop(store, input, true)
 	case "RPOP":
-		return listPop(db, input, false)
+		return listPop(store, input, false)
 	case "LRANGE":
-		return lrange(db, input)
+		return lrange(store, input)
 	case "LTRIM":
-		return ltrim(db, input)
+		return ltrim(store, input)
 	}
 	return nil, fmt.Errorf("invalid command: %s", cmd)
 }
 
-func ltrim(database db.DB, input [][]byte) (*resp.Format, error) {
+func ltrim(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) != 3 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
@@ -44,7 +44,7 @@ func ltrim(database db.DB, input [][]byte) (*resp.Format, error) {
 	if err1 != nil || err2 != nil {
 		return nil, fmt.Errorf("value is not an integer or out of range")
 	}
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 
 	if ok && value.ValType != db.TypeList {
 		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
@@ -80,7 +80,7 @@ func ltrim(database db.DB, input [][]byte) (*resp.Format, error) {
 	return &resp.Format{Type: resp.TypeSimple, Payload: []byte("OK")}, nil
 }
 
-func lrange(database db.DB, input [][]byte) (*resp.Format, error) {
+func lrange(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) != 3 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
@@ -95,7 +95,7 @@ func lrange(database db.DB, input [][]byte) (*resp.Format, error) {
 		Type: resp.TypeArray,
 	}
 
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if ok && value.ValType != db.TypeList {
 		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
@@ -124,13 +124,13 @@ func lrange(database db.DB, input [][]byte) (*resp.Format, error) {
 	return output, nil
 }
 
-func llen(database db.DB, input [][]byte) (*resp.Format, error) {
+func llen(store *db.Store, input [][]byte) (*resp.Format, error) {
 	if len(input) != 1 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 
 	key := input[0]
-	value, ok := database.Get(key)
+	value, ok := store.GetDB(key)
 	if ok && value.ValType != db.TypeList {
 		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
@@ -146,13 +146,13 @@ func llen(database db.DB, input [][]byte) (*resp.Format, error) {
 	}, nil
 }
 
-func listPush(database db.DB, input [][]byte, left bool) (*resp.Format, error) {
+func listPush(store *db.Store, input [][]byte, left bool) (*resp.Format, error) {
 	if len(input) < 2 {
 		return nil, fmt.Errorf("invalid no of commands %d", len(input))
 	}
 	list := &db.Value{}
 	key, values := input[0], input[1:]
-	getVal, ok := database.Get(key)
+	getVal, ok := store.GetDB(key)
 	if ok && getVal.ValType != db.TypeList {
 		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
@@ -182,7 +182,7 @@ func listPush(database db.DB, input [][]byte, left bool) (*resp.Format, error) {
 		list.List.Size++
 	}
 
-	database.Set(key, list)
+	store.SetDB(key, list)
 
 	return &resp.Format{
 		Type:    resp.TypeInt,
@@ -190,7 +190,7 @@ func listPush(database db.DB, input [][]byte, left bool) (*resp.Format, error) {
 	}, nil
 }
 
-func listPop(database db.DB, input [][]byte, left bool) (*resp.Format, error) {
+func listPop(store *db.Store, input [][]byte, left bool) (*resp.Format, error) {
 	if len(input) != 1 && len(input) != 2 {
 		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
@@ -204,7 +204,7 @@ func listPop(database db.DB, input [][]byte, left bool) (*resp.Format, error) {
 		}
 	}
 
-	val, ok := database.Get(key)
+	val, ok := store.GetDB(key)
 	if ok && val.ValType != db.TypeList {
 		return nil, fmt.Errorf("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}

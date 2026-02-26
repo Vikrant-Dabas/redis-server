@@ -15,7 +15,7 @@ type Server struct {
 	ln         net.Listener
 	quitch     chan struct{}
 	msgch      chan Message
-	database   db.DB
+	store	*db.Store
 }
 
 type Message struct {
@@ -24,12 +24,12 @@ type Message struct {
 }
 
 func NewServer(listenAddr string) *Server {
-	database := db.NewDB()
+	store := db.NewStore()
 	return &Server{
 		listenAddr: listenAddr,
 		quitch:     make(chan struct{}),
 		msgch:      make(chan Message, 10),
-		database:   database,
+		store:store,
 	}
 }
 
@@ -72,7 +72,7 @@ func (s *Server) ReadLoop(conn net.Conn, r *bufio.Reader) {
 			continue
 		}
 		cmd := format.ToByteMatrix()
-		format, err = commands.Execute(s.database, cmd)
+		format, err = commands.Execute(s.store,cmd)
 		if err != nil {
 			w.WriteString("-ERR " + err.Error() + "\r\n")
 			w.Flush()
